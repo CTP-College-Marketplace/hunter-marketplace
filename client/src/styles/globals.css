@@ -1,1 +1,125 @@
+/* Tailwind v4 entrypoint */
 @import "tailwindcss";
+
+/* Hunter Marketplace Theme (requested @theme block) */
+@theme {
+  /* Colors */
+  --color-hunter-purple: #635CB6;
+  --color-hunter-navy: #2C2850;
+  --color-hunter-light: #EDECF9;
+
+  /* Fonts */
+  --font-sans: Inter, ui-sans-serif, system-ui;
+  --font-display: Poppins, ui-sans-serif, system-ui;
+
+  /* Radius */
+  --radius-2xl: 1.25rem;
+  --radius-3xl: 1.75rem;
+
+  /* Shadows */
+  --shadow-soft: 0 4px 10px rgba(0,0,0,0.08);
+  --shadow-card: 0 6px 20px rgba(99,92,182,0.15);
+}
+
+/* Fallback / editor-friendly root variables (keeps linters happy) */
+:root {
+  /* Colors */
+  --color-hunter-purple: #635CB6;
+  --color-hunter-navy: #2C2850;
+  --color-hunter-light: #EDECF9;
+
+  /* Fonts */
+  --font-sans: Inter, ui-sans-serif, system-ui;
+  --font-display: Poppins, ui-sans-serif, system-ui;
+
+  /* Radius */
+  --radius-2xl: 1.25rem;
+  --radius-3xl: 1.75rem;
+
+  /* Shadows */
+  --shadow-soft: 0 4px 10px rgba(0,0,0,0.08);
+  --shadow-card: 0 6px 20px rgba(99,92,182,0.15);
+}
+
+/* Register small custom utilities so you can use bg-hunter-light, text-hunter-purple, shadow-card, shadow-soft */
+@layer utilities {
+  .bg-hunter-light { background-color: var(--color-hunter-light) !important; }
+  .text-hunter-purple { color: var(--color-hunter-purple) !important; }
+  .text-hunter-navy { color: var(--color-hunter-navy) !important; }
+  .shadow-card { box-shadow: var(--shadow-card) !important; }
+  .shadow-soft { box-shadow: var(--shadow-soft) !important; }
+  /* optional: mirror the variable-based radii (Tailwind already has rounded-2xl) */
+  .rounded-2xl { border-radius: var(--radius-2xl) !important; }
+}
+
+/* Global defaults (use the custom utilities above) */
+html, body {
+  @apply antialiased font-sans;
+}
+
+
+h1, h2, h3, h4 {
+  @apply font-display;
+}
+
+/* Reusable card helper */
+.card {
+  @apply rounded-2xl bg-white shadow-card p-4;
+  /* fallbacks if utilities are not applied for any reason */
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-card);
+  background-color: white;
+}
+
+/* Soft border default */
+* {
+  border-color: rgb(229 231 235); /* neutral-200 */
+}
+
+
+
+/* --- Purple bubble animations --- */
+@keyframes float {
+  0%   { transform: translateY(0) scale(1); }
+  50%  { transform: translateY(-10px) scale(1.03); }
+  100% { transform: translateY(0) scale(1); }
+}
+@keyframes pulse-slow {
+  0%, 100% { opacity: .1; }
+  50%      { opacity: .1; }
+}
+
+.animate-float { animation: float 14s ease-in-out infinite; }
+.animate-float-delayed { animation: float 16s ease-in-out infinite 1s; }
+.animate-pulse-slow { animation: pulse-slow 10s ease-in-out infinite; }
+
+
+/* --- Dynamic purple bubbles --- */
+@keyframes floatXY {
+  0%   { transform: translate(-50%, -50%) translate(0px, 0px) scale(1); }
+  50%  { transform: translate(-50%, -50%) translate(12px, -10px) scale(1.03); }
+  100% { transform: translate(-50%, -50%) translate(-8px, 6px)  scale(1); }
+}
+
+/* Respect user setting for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  [style*="floatXY"] { animation: none !important; }
+}
+
+/* --- Navy squares animation --- */
+@keyframes driftFade {
+  0%   { transform: translate(-50%, -50%) translate(0, 0) rotate(var(--angle, 0));   opacity: var(--op, .25); }
+  50%  { transform: translate(-50%, -50%) translate(18px, -12px) rotate(calc(var(--angle, 0) + 2deg)); opacity: calc(var(--op, .25) + .12); }
+  100% { transform: translate(-50%, -50%) translate(-12px, 10px) rotate(var(--angle, 0)); opacity: var(--op, .25); }
+}
+
+.animate-drift {
+  animation-name: driftFade;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .animate-drift { animation: none !important; }
+}
