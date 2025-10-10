@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 
 type Square = {
   leftPct: number;   // 0–100
@@ -13,7 +13,10 @@ type Square = {
 };
 
 export default function BackgroundSquares({ count = 10 }: { count?: number }) {
+  const [isClient, setIsClient] = useState(false);
+  
   const squares: Square[] = useMemo(() => {
+    if (!isClient) return [];
     const r = (min: number, max: number) => Math.random() * (max - min) + min;
     return Array.from({ length: count }, () => ({
       leftPct: r(0, 100),
@@ -24,7 +27,15 @@ export default function BackgroundSquares({ count = 10 }: { count?: number }) {
       delay: r(0, 1),
       angle: r(-20, 20),
     }));
-  }, [count]);
+  }, [count, isClient]);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  if (!isClient) {
+    return null;
+  }
 
   return (
     <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden>
