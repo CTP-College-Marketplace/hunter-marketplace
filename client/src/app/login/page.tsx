@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { isLoggedIn, setLoggedIn } from "@/lib/demoAuth";
@@ -30,10 +30,12 @@ export default function LoginPage() {
     router.replace(callback);          // go back to the page user wanted
   }
 
-  if (typeof window !== "undefined" && isLoggedIn()) {
-    router.replace(callback);
-    return null;
-  }
+  // Check if already logged in on client side only
+  useEffect(() => {
+    if (isLoggedIn()) {
+      router.replace(callback);
+    }
+  }, [router, callback]);
 
   return (
     <div className="mx-auto max-w-md">

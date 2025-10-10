@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -16,7 +16,11 @@ export default function ListingDetailPage() {
   const [isFavorited, setIsFavorited] = useState(false);
   
   const listing = getListingById(listingId);
-  const loggedIn = typeof window !== "undefined" ? isLoggedIn() : false;
+  const [loggedIn, setLoggedIn] = useState(false);
+  
+  useEffect(() => {
+    setLoggedIn(isLoggedIn());
+  }, []);
 
   if (!listing) {
     return (

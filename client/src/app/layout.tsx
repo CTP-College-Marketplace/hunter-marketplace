@@ -14,7 +14,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       {/* black canvas; content is light; effects sit under it */}
-      <body className="relative bg-black text-white antialiased overflow-x-hidden">
+      <body className="relative bg-black text-white antialiased overflow-x-hidden" suppressHydrationWarning>
         <div className="absolute  -z-10">
     <BackgroundSquares count={30} />
   </div>
