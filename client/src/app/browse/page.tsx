@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import ListingCard from "@/components/ListingCard";
 import Link from "next/link";
-import { getAllListings, ListingWithDate } from "@/lib/data";
+import { getAllListings } from "@/lib/data";
 
 const ALL_CATEGORIES = ["Textbooks", "Electronics", "Furniture", "Services"] as const;
 
@@ -33,13 +33,13 @@ export default function ListingsPage() {
       if (sort === "low") return a.price - b.price;
       if (sort === "high") return b.price - a.price;
       // "new" (default): newest first by datePosted
-      const ad = Date.parse(a.datePosted);
-      const bd = Date.parse(b.datePosted);
+      const ad = Date.parse(a.datePosted!);
+      const bd = Date.parse(b.datePosted!);
       return bd - ad;
     });
 
     return out;
-  }, [search, category, sort]);
+  }, [listings, search, category, sort]);
 
   return (
     <div className="py-8">
@@ -81,7 +81,7 @@ export default function ListingsPage() {
 
         <select
           value={sort}
-          onChange={(e) => setSort(e.target.value as any)}
+          onChange={(e) => setSort(e.target.value as "" | "new" | "low" | "high")}
           className="rounded-xl border border-white/10 bg-white/80 px-3 py-2 text-sm text-hunter-navy outline-none focus:ring-2 focus:ring-hunter-purple/50"
         >
           <option value="new">Newest</option>

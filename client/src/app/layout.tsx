@@ -2,7 +2,6 @@ import "../styles/globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import BackgroundSquares from "@/components/BackgroundSquares";
-import BackgroundBubbles from "@/components/BackgroundBubbles";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
