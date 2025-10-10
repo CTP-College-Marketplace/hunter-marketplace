@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 
 export type Listing = {
   id: string;
@@ -18,14 +19,15 @@ export default function ListingCard({ item }: { item: Listing }) {
   const [src, setSrc] = useState(item.imageUrl);
 
   return (
-    <article
-      className="
-        group overflow-hidden rounded-2xl border border-white/10
-        bg-white text-hunter-navy shadow-soft transition
-        hover:shadow-card
-        dark:bg-[#1c1a2f] dark:text-gray-100
-      "
-    >
+    <Link href={`/listings/${item.id}`}>
+      <article
+        className="
+          group overflow-hidden rounded-2xl border border-white/10
+          bg-white text-hunter-navy shadow-soft transition
+          hover:shadow-card cursor-pointer
+          dark:bg-[#1c1a2f] dark:text-gray-100
+        "
+      >
       {/* image */}
       <div className="relative aspect-[4/3] w-full">
         <Image
@@ -66,5 +68,6 @@ export default function ListingCard({ item }: { item: Listing }) {
         )}
       </div>
     </article>
+    </Link>
   );
 }
