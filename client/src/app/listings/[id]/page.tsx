@@ -24,7 +24,7 @@ export default function ListingDetailPage() {
         <h1 className="text-2xl font-bold text-white mb-4">Listing Not Found</h1>
         <p className="text-gray-400 mb-6">The listing you&apos;re looking for doesn&apos;t exist or has been removed.</p>
         <Link 
-          href="/listings"
+          href="/browse"
           className="inline-block rounded-full bg-hunter-purple px-6 py-2 text-white font-semibold hover:opacity-90 transition"
         >
           Browse All Listings
@@ -130,7 +130,7 @@ export default function ListingDetailPage() {
               <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span className="text-white">Posted {formatDate(listing.datePosted)}</span>
+              <span className="text-white">Posted {formatDate(listing.datePosted!)}</span>
             </div>
           </div>
 

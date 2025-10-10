@@ -21,7 +21,7 @@ export default function HomePage() {
 				<div className="mb-3 flex items-center justify-between">
 					<h2 className="text-lg font-semibold">Latest Listings</h2>
 					<a
-						href="/listings"
+						href="/browse"
 						className="rounded-full bg-hunter-purple px-4 py-2 text-sm font-semibold text-white shadow-soft transition hover:opacity-90"
 					>
 						View all
