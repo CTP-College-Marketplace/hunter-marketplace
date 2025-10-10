@@ -1,49 +1,10 @@
 import "../styles/globals.css";
-import ListingCard, { Listing } from "@/components/ListingCard";
-
-const listings: Listing[] = [
-	{
-		id: "1",
-		title: "CSCI 135 Textbook (Good Condition)",
-		price: 25,
-		category: "Textbooks",
-		imageUrl:
-			"https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=1200&auto=format&fit=crop",
-		location: "Hunter West",
-		condition: "good",
-	},
-	{
-		id: "2",
-		title: "Dell XPS 13 (2019)",
-		price: 350,
-		category: "Electronics",
-		imageUrl:
-			"https://images.unsplash.com/photo-1517336714731-489689fd1ca8?q=80&w=1200&auto=format&fit=crop",
-		location: "Upper East Side",
-		condition: "like new",
-	},
-	{
-		id: "3",
-		title: "Dorm Mini-Fridge",
-		price: 70,
-		category: "Furniture",
-		imageUrl:
-			"https://images.unsplash.com/photo-1519681393784-d120267933ba?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-		location: "Student Housing",
-		condition: "fair",
-	},
-	{
-		id: "4",
-		title: "Calculus Tutoring (1hr)",
-		price: 30,
-		category: "Services",
-		imageUrl:
-			"https://images.unsplash.com/photo-1503023345310-bd7c1de61c7d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-		location: "Library",
-	},
-];
+import ListingCard from "@/components/ListingCard";
+import { getLatestListings } from "@/lib/data";
 
 export default function HomePage() {
+	const listings = getLatestListings(4);
+	
 	return (
 		<div className="space-y-6">
 
@@ -60,7 +21,7 @@ export default function HomePage() {
 				<div className="mb-3 flex items-center justify-between">
 					<h2 className="text-lg font-semibold">Latest Listings</h2>
 					<a
-						href="/listings"
+						href="/browse"
 						className="rounded-full bg-hunter-purple px-4 py-2 text-sm font-semibold text-white shadow-soft transition hover:opacity-90"
 					>
 						View all
