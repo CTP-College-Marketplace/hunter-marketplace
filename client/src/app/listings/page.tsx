@@ -1,75 +1,16 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import ListingCard, { Listing } from "@/components/ListingCard";
+import ListingCard from "@/components/ListingCard";
 import Link from "next/link";
-
-type ListingWithDate = Listing & { datePosted: string }; // ISO date
+import { getAllListings, ListingWithDate } from "@/lib/data";
 
 const ALL_CATEGORIES = ["Textbooks", "Electronics", "Furniture", "Services"] as const;
 
-const listings: ListingWithDate[] = [
-  {
-    id: "1",
-    title: "CSCI 135 Textbook (Good Condition)",
-    price: 25,
-    category: "Textbooks",
-    imageUrl: "https://picsum.photos/seed/book/800/600",
-    location: "Hunter West",
-    condition: "good",
-    datePosted: "2025-09-20T10:00:00.000Z",
-  },
-  {
-    id: "2",
-    title: "Dell XPS 13 (2019)",
-    price: 350,
-    category: "Electronics",
-    imageUrl: "https://picsum.photos/seed/laptop/800/600",
-    location: "Upper East Side",
-    condition: "like new",
-    datePosted: "2025-09-27T18:30:00.000Z",
-  },
-  {
-    id: "3",
-    title: "Dorm Mini-Fridge",
-    price: 70,
-    category: "Furniture",
-    imageUrl: "https://picsum.photos/seed/fridge/800/600",
-    location: "Student Housing",
-    condition: "fair",
-    datePosted: "2025-09-22T13:45:00.000Z",
-  },
-  {
-    id: "4",
-    title: "Graphing Calculator TI-84",
-    price: 40,
-    category: "Electronics",
-    imageUrl: "https://picsum.photos/seed/calculator/800/600",
-    location: "Library",
-    datePosted: "2025-09-29T02:15:00.000Z",
-  },
-  {
-    id: "5",
-    title: "IKEA Desk (like new)",
-    price: 55,
-    category: "Furniture",
-    imageUrl: "https://picsum.photos/seed/desk/800/600",
-    location: "Dorms",
-    datePosted: "2025-09-25T08:10:00.000Z",
-  },
-  {
-    id: "6",
-    title: "Stats Tutoring (1hr)",
-    price: 30,
-    category: "Services",
-    imageUrl: "https://picsum.photos/seed/study/800/600",
-    location: "North Building",
-    datePosted: "2025-09-24T16:00:00.000Z",
-  },
-];
-
 
 export default function ListingsPage() {
+  const listings = getAllListings();
+  
   // toolbar state
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string>("");

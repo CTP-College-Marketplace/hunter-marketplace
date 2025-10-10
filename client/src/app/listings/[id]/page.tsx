@@ -5,97 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { isLoggedIn } from "@/lib/demoAuth";
-
-// This will eventually come from your Supabase database
-// For now, we'll create a simple lookup function
-function getListingById(id: string) {
-  const listings = [
-    {
-      id: "1",
-      title: "CSCI 135 Textbook (Good Condition)",
-      price: 25,
-      category: "Textbooks",
-      imageUrl: "https://picsum.photos/seed/book/800/600",
-      location: "Hunter West",
-      condition: "good",
-      description: "Introduction to Computer Science textbook. Barely used, no highlights or markings. Perfect for CSCI 135 course.",
-      sellerName: "Alex Chen",
-      sellerEmail: "alex.chen@hunter.cuny.edu",
-      datePosted: "2025-09-20T10:00:00.000Z",
-      contactMethod: "email",
-    },
-    {
-      id: "2", 
-      title: "Dell XPS 13 (2019)",
-      price: 350,
-      category: "Electronics",
-      imageUrl: "https://picsum.photos/seed/laptop/800/600",
-      location: "Upper East Side",
-      condition: "like new",
-      description: "Excellent condition Dell XPS 13 laptop. Great for programming and school work. Includes charger and original box.",
-      sellerName: "Maria Rodriguez",
-      sellerEmail: "maria.rodriguez@hunter.cuny.edu", 
-      datePosted: "2025-09-27T18:30:00.000Z",
-      contactMethod: "email",
-    },
-    {
-      id: "3",
-      title: "Dorm Mini-Fridge", 
-      price: 70,
-      category: "Furniture",
-      imageUrl: "https://picsum.photos/seed/fridge/800/600",
-      location: "Student Housing",
-      condition: "fair",
-      description: "Compact mini-fridge perfect for dorms. Works great, just some cosmetic wear. Great deal for students!",
-      sellerName: "Jordan Kim",
-      sellerEmail: "jordan.kim@hunter.cuny.edu",
-      datePosted: "2025-09-22T13:45:00.000Z", 
-      contactMethod: "email",
-    },
-    {
-      id: "4",
-      title: "Graphing Calculator TI-84",
-      price: 40,
-      category: "Electronics", 
-      imageUrl: "https://picsum.photos/seed/calculator/800/600",
-      location: "Library",
-      description: "TI-84 Plus CE graphing calculator. Barely used, includes case and batteries. Required for many math courses.",
-      sellerName: "Sam Wilson",
-      sellerEmail: "sam.wilson@hunter.cuny.edu",
-      datePosted: "2025-09-29T02:15:00.000Z",
-      contactMethod: "email",
-    },
-    {
-      id: "5",
-      title: "IKEA Desk (like new)",
-      price: 55,
-      category: "Furniture",
-      imageUrl: "https://picsum.photos/seed/desk/800/600", 
-      location: "Dorms",
-      condition: "like new",
-      description: "Clean white IKEA desk perfect for studying. Easy to assemble, includes all hardware. Moving out sale!",
-      sellerName: "Taylor Brown",
-      sellerEmail: "taylor.brown@hunter.cuny.edu",
-      datePosted: "2025-09-25T08:10:00.000Z",
-      contactMethod: "email",
-    },
-    {
-      id: "6",
-      title: "Stats Tutoring (1hr)",
-      price: 30,
-      category: "Services",
-      imageUrl: "https://picsum.photos/seed/study/800/600",
-      location: "North Building", 
-      description: "Statistics tutoring session. I'm a senior math major with experience helping students understand difficult concepts. Can meet in library or virtually.",
-      sellerName: "Chris Lee",
-      sellerEmail: "chris.lee@hunter.cuny.edu",
-      datePosted: "2025-09-24T16:00:00.000Z",
-      contactMethod: "email",
-    },
-  ];
-
-  return listings.find(listing => listing.id === id);
-}
+import { getListingById } from "@/lib/data";
 
 export default function ListingDetailPage() {
   const params = useParams();
@@ -112,7 +22,7 @@ export default function ListingDetailPage() {
     return (
       <div className="mx-auto max-w-2xl text-center">
         <h1 className="text-2xl font-bold text-white mb-4">Listing Not Found</h1>
-        <p className="text-gray-400 mb-6">The listing you're looking for doesn't exist or has been removed.</p>
+        <p className="text-gray-400 mb-6">The listing you&apos;re looking for doesn&apos;t exist or has been removed.</p>
         <Link 
           href="/listings"
           className="inline-block rounded-full bg-hunter-purple px-6 py-2 text-white font-semibold hover:opacity-90 transition"
@@ -230,11 +140,11 @@ export default function ListingDetailPage() {
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-hunter-purple flex items-center justify-center">
                 <span className="text-white font-semibold">
-                  {listing.sellerName.split(' ').map(n => n[0]).join('')}
+                  {listing.sellerName?.split(' ').map(n => n[0]).join('') || 'U'}
                 </span>
               </div>
               <div>
-                <p className="text-white font-medium">{listing.sellerName}</p>
+                <p className="text-white font-medium">{listing.sellerName || 'Unknown Seller'}</p>
                 <p className="text-sm text-gray-400">Hunter Student</p>
               </div>
             </div>
@@ -261,7 +171,7 @@ export default function ListingDetailPage() {
             {loggedIn ? (
               <div className="space-y-4">
                 <p className="text-gray-300">
-                  You can contact {listing.sellerName} about "{listing.title}"
+                  You can contact {listing.sellerName} about &quot;{listing.title}&quot;
                 </p>
                 <div className="space-y-2">
                   <a 
