@@ -109,7 +109,7 @@ export default function ListingsPage() {
           <p className="text-sm text-gray-400">Filter by search, category, and sort order.</p>
         </div>
         <Link
-          href="/create"
+          href="/post"
           className="rounded-full bg-hunter-purple px-4 py-2 text-sm font-semibold text-white shadow-soft transition hover:opacity-90"
         >
           Post a Listing
