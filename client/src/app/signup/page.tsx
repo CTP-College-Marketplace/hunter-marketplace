@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { setLoggedIn, isLoggedIn } from "@/lib/demoAuth";
 
-function SignupForm() {
+export default function SignupPage() {
   const router = useRouter();
   const params = useSearchParams();
   const callback = params.get("callback") || "/";
@@ -114,13 +114,5 @@ function SignupForm() {
         </div>
       </form>
     </div>
-  );
-}
-
-export default function SignupPage() {
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <SignupForm />
-    </Suspense>
   );
 }
