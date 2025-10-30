@@ -18,17 +18,17 @@ Hunter students need a safe and simple way to buy, sell, and exchange items like
 
 ## Tech Stack  
 - **Frontend:** React + Next.js + TypeScript + TailwindCSS  
-- **Backend:** Next.js API routes / AWS Lambda  
-- **Database:** PostgreSQL (Aurora) + Drizzle ORM  
-- **Storage:** AWS S3 (images)  
-- **Auth:** AWS Cognito with Hunter email domain restriction  
-- **Deployment:** AWS (Lambda/Fargate, DynamoDB optional for messaging)  
-- **CI/CD:** GitHub Actions + LocalStack for testing  
+- **Backend:** Next.js API routes / Azure Functions  
+- **Database:** Azure Database for PostgreSQL + Prisma ORM  
+- **Storage:** Azure Blob Storage (images)  
+- **Auth:** Custom authentication with PostgreSQL + JWT tokens (Hunter email validation)  
+- **Deployment:** Azure (App Service/Functions)  
+- **CI/CD:** GitHub Actions for testing  
 
 ---
 
 ## Why It Matters  
 - Solves a **real problem** for Hunter students.  
 - Keeps the marketplace **safe and exclusive** to the campus.  
-- Teaches the team **modern web dev, AWS, and CI/CD** skills.  
+- Teaches the team **modern web dev, Azure cloud, and CI/CD** skills.  
 - Can **scale to all CUNY schools** after proving success at Hunter.  
