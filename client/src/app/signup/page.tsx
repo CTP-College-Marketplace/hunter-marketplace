@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { setLoggedIn, isLoggedIn } from "@/lib/demoAuth";
+import { supabase } from "@/lib/supabaseClient";
+import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 
 function SignupForm() {
   const router = useRouter();
@@ -13,114 +14,102 @@ function SignupForm() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [pwd, setPwd] = useState("");
-  const [confirm, setConfirm] = useState("");
+  const [confirmPwd, setConfirmPwd] = useState("");
+  const [showPwd, setShowPwd] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
+    setError(null); setMessage(null);
 
-    if (!name.trim()) return setError("Please enter your name.");
-    if (!email.includes("@")) return setError("Enter a valid email.");
+    if (!name.trim()) return setError("Please enter your full name.");
+    if (!email.includes("@myhunter.cuny.edu")) return setError("Enter a valid email.");
     if (pwd.length < 6) return setError("Password must be at least 6 characters.");
-    if (pwd !== confirm) return setError("Passwords do not match.");
+    if (pwd !== confirmPwd) return setError("Passwords do not match.");
 
     setBusy(true);
-    // demo: “create account” and log them in
-    setLoggedIn(true);
-    await new Promise((r) => setTimeout(r, 400));
-    router.replace(callback);
+    const { data, error } = await supabase.auth.signUp({ email, password: pwd });
+    setBusy(false);
+
+    if (error) return setError(error.message);
+
+    if (data.user && !data.session) setMessage("Check your email to confirm your account.");
+    else router.replace(callback);
   }
 
-  if (typeof window !== "undefined" && isLoggedIn()) {
-    router.replace(callback);
-    return null;
-  }
+  useEffect(() => {
+    let unsub: (() => void) | undefined;
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) return router.replace(callback);
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(
+        (_e: AuthChangeEvent, s: Session | null) => { if (s) router.replace(callback); }
+      );
+      unsub = () => subscription.unsubscribe();
+    })();
+    return () => unsub?.();
+  }, [router, callback]);
 
   return (
     <div className="mx-auto max-w-md">
-      <h1 className="mb-2 text-2xl font-display font-bold text-white">Create an account</h1>
-      <p className="mb-6 text-sm text-gray-400">This is a demo sign-up. We’ll hook real auth later.</p>
-
-      <form onSubmit={onSubmit} className="space-y-4 rounded-2xl border border-white/10 bg-white/10 p-6">
+      <h1 className="mb-2 text-2xl font-bold">Sign up</h1>
+      <form onSubmit={onSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-200">Name</label>
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Your name"
-            className="mt-1 w-full rounded-xl border border-white/10 bg-white/80 px-3 py-2 text-sm text-hunter-navy placeholder:text-gray-500 outline-none focus:ring-2 focus:ring-hunter-purple/50"
-          />
-        </div>
-
+         <label className="block text-sm font-medium text-gray-200">Name</label>
+         <input
+           value={name}
+           onChange={(e) => setName(e.target.value)}
+           placeholder="Your Full Name"
+           className="mt-1 w-full rounded-xl border border-white/10 bg-white/80 px-3 py-2 text-sm text-hunter-navy placeholder:text-gray-500 outline-none focus:ring-2 focus:ring-hunter-purple/50"
+         />
+       </div>
         <div>
-          <label className="block text-sm font-medium text-gray-200">Email</label>
-          <input
-            type="email"
-            autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@hunter.cuny.edu"
+          <label className="block text-sm">Email</label>
+          <input 
+            type="email" 
+            value={email} 
+            onChange={e=>setEmail(e.target.value)} 
+            placeholder="your_name@myhunter.cuny.edu"
             className="mt-1 w-full rounded-xl border border-white/10 bg-white/80 px-3 py-2 text-sm text-hunter-navy placeholder:text-gray-500 outline-none focus:ring-2 focus:ring-hunter-purple/50"
-          />
+            />
         </div>
-
         <div>
-          <label className="block text-sm font-medium text-gray-200">Password</label>
-          <input
-            type="password"
-            autoComplete="new-password"
-            value={pwd}
-            onChange={(e) => setPwd(e.target.value)}
-            placeholder="Create a password"
-            className="mt-1 w-full rounded-xl border border-white/10 bg-white/80 px-3 py-2 text-sm text-hunter-navy placeholder:text-gray-500 outline-none focus:ring-2 focus:ring-hunter-purple/50"
-          />
+          <label className="block text-sm">Password</label>
+          <div className="flex gap-2">
+            <input 
+              type={showPwd ? "text" : "password"} 
+              value={pwd} onChange={e=>setPwd(e.target.value)}
+              className="mt-1 w-full rounded-xl border border-white/10 bg-white/80 px-3 py-2 text-sm text-hunter-navy placeholder:text-gray-500 outline-none focus:ring-2 focus:ring-hunter-purple/50"
+              />
+            <button 
+              type="button" 
+              onClick={()=>setShowPwd(s=>!s)} 
+              className="px-3 border rounded">{showPwd ? "Hide" : "Show"}</button>
+          </div>
         </div>
-
         <div>
-          <label className="block text-sm font-medium text-gray-200">Confirm password</label>
-          <input
-            type="password"
-            autoComplete="new-password"
-            value={confirm}
-            onChange={(e) => setConfirm(e.target.value)}
-            placeholder="Re-enter your password"
+          <label className="block text-sm">Confirm Password</label>
+          <input 
+            type={showPwd ? "text" : "password"} 
+            value={confirmPwd} 
+            onChange={e=>setConfirmPwd(e.target.value)} 
             className="mt-1 w-full rounded-xl border border-white/10 bg-white/80 px-3 py-2 text-sm text-hunter-navy placeholder:text-gray-500 outline-none focus:ring-2 focus:ring-hunter-purple/50"
-          />
+            />
         </div>
-
-        {error && <p className="text-xs text-red-300">{error}</p>}
+        {error && <p className="text-sm text-red-600">{error}</p>}
+        {message && <p className="text-sm text-green-600">{message}</p>}
 
         <div className="flex items-center justify-between">
-          <Link href="/" className="text-sm text-gray-300 hover:text-white transition">Back</Link>
-          <button
-            type="submit"
-            disabled={busy}
-            className="rounded-full bg-hunter-purple px-5 py-2 text-sm font-semibold text-white shadow-soft transition hover:opacity-90 disabled:opacity-50"
-          >
-            {busy ? "Creating…" : "Create account"}
+          <Link href="/login" className="text-sm">Back to login</Link>
+          <button type="submit" disabled={busy} className="px-5 py-2 rounded bg-black text-white">
+            {busy ? "Creating…" : "Sign up"}
           </button>
-        </div>
-
-        <div className="pt-2 text-center text-sm text-gray-300">
-          Already have an account?{" "}
-          <Link
-            href={`/login?callback=${encodeURIComponent(callback)}`}
-            className="text-hunter-purple underline underline-offset-4"
-          >
-            Log in
-          </Link>
         </div>
       </form>
     </div>
   );
 }
+export default function Page(){ return <Suspense fallback={<div>Loading…</div>}><SignupForm/></Suspense>; }
 
-export default function SignupPage() {
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <SignupForm />
-    </Suspense>
-  );
-}
