@@ -36,5 +36,5 @@ CI/CD: GitHub Actions + optional Azure DevOps integration
 ## Why It Matters  
 - Solves a **real problem** for Hunter students.  
 - Keeps the marketplace **safe and exclusive** to the campus.  
-- Teaches the team **modern web dev, AWS, and CI/CD** skills.  
+- Teaches the team **modern web dev, Azure cloud, and CI/CD** skills.  
 - Can **scale to all CUNY schools** after proving success at Hunter.  

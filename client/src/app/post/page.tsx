@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { isLoggedIn } from "@/lib/demoAuth";
@@ -23,7 +23,10 @@ export default function PostPage() {
   const router = useRouter();
 
   // TODO: replace with real auth check later
-  const logged = typeof window !== "undefined" ? isLoggedIn() : false;
+  const [logged, setLogged] = useState(false);
+  useEffect(() => {
+    setLogged(isLoggedIn());
+  }, []);
 
 
   const [form, setForm] = useState<NewListing>({
@@ -35,6 +38,7 @@ export default function PostPage() {
     condition: "",
     description: "",
   });
+  const [file, setFile] = useState<File | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
   const [submittedId, setSubmittedId] = useState<string | null>(null);
@@ -45,12 +49,13 @@ export default function PostPage() {
     if (!form.title.trim()) e.title = "Title is required";
     if (form.price === "" || Number(form.price) <= 0) e.price = "Enter a valid price";
     if (!form.category) e.category = "Pick a category";
-    if (!form.imageUrl.trim()) e.imageUrl = "Image URL is required";
+    // Allow either a chosen file OR a direct image URL
+    if (!file && !form.imageUrl.trim()) e.imageUrl = "Image is required";
     if (!form.location.trim()) e.location = "Where to meet or pick up?";
     if (!form.condition) e.condition = "Select condition";
     if (form.description.trim().length < 10) e.description = "Tell buyers a bit more (10+ chars)";
     return e;
-  }, [form]);
+  }, [form, file]);
 
   const hasErrors = Object.keys(errors).length > 0;
 
@@ -68,10 +73,20 @@ export default function PostPage() {
     try {
       setSubmitting(true);
 
-      // This is where you'd POST to your API route later.
-      // For now we simulate "creating" and log the payload.
+      // If a file was chosen, upload to Azure and get a public URL
+      let imageUrl = form.imageUrl.trim();
+      if (file) {
+        const fd = new FormData();
+        fd.append("file", file);
+        const res = await fetch("/api/upload", { method: "POST", body: fd });
+        if (!res.ok) throw new Error("Image upload failed");
+        const data = await res.json();
+        imageUrl = data.url as string;
+      }
+
       const payload = {
         ...form,
+        imageUrl,
         price: Number(form.price),
         datePosted: new Date().toISOString(),
         id: crypto.randomUUID(),
@@ -92,9 +107,10 @@ export default function PostPage() {
         condition: "",
         description: "",
       });
+      setFile(null);
 
       // navigate to Browse after a moment (optional)
-      setTimeout(() => router.push("/listings"), 800);
+      setTimeout(() => router.push("/browse"), 800);
     } finally {
       setSubmitting(false);
     }
@@ -179,17 +195,17 @@ export default function PostPage() {
           </div>
         </div>
 
-        {/* Row: Image URL + Location */}
+        {/* Row: Image Upload + Location */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium text-gray-200">Image URL</label>
+            <label className="block text-sm font-medium text-gray-200">Listing Image</label>
             <input
-              value={form.imageUrl}
-              onChange={handleChange("imageUrl")}
-              placeholder="https://images.unsplash.com/..."
+              type="file"
+              accept="image/*"
+              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
               className="mt-1 w-full rounded-xl border border-white/10 bg-white/80 px-3 py-2 text-sm text-hunter-navy placeholder:text-gray-500 outline-none focus:ring-2 focus:ring-hunter-purple/50"
             />
-            {errors.imageUrl && <p className="mt-1 text-xs text-red-300">{errors.imageUrl}</p>}
+            {!file && errors.imageUrl && <p className="mt-1 text-xs text-red-300">{errors.imageUrl}</p>}
           </div>
 
           <div>

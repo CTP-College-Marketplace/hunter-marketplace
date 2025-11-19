@@ -6,7 +6,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 
-function SignupForm() {
+export default function SignupPage() {
   const router = useRouter();
   const params = useSearchParams();
   const callback = params.get("callback") || "/";
