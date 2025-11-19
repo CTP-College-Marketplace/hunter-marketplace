@@ -17,13 +17,19 @@ Hunter students need a safe and simple way to buy, sell, and exchange items like
 ---
 
 ## Tech Stack  
-- **Frontend:** React + Next.js + TypeScript + TailwindCSS  
-- **Backend:** Next.js API routes / Azure Functions  
-- **Database:** Azure Database for PostgreSQL + Prisma ORM  
-- **Storage:** Azure Blob Storage (images)  
-- **Auth:** Custom authentication with PostgreSQL + JWT tokens (Hunter email validation)  
-- **Deployment:** Azure (App Service/Functions)  
-- **CI/CD:** GitHub Actions for testing  
+Frontend: React + Next.js + TypeScript + TailwindCSS
+
+Backend: Next.js API routes / Azure Functions or Azure App Service
+
+Database: Azure Database for PostgreSQL (managed) + Drizzle ORM
+
+Storage: Azure Blob Storage (for image uploads)
+
+Authentication: Azure Active Directory B2C with @hunter.cuny.edu domain restriction
+
+Deployment: Azure Functions / App Service, optional Azure Cosmos DB for chat or real-time messaging
+
+CI/CD: GitHub Actions + optional Azure DevOps integration
 
 ---
 
