@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
 type Props = {
-  to?: string;          
+  to?: string;
   className?: string;
   label?: string;
 };

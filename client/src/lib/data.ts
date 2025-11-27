@@ -120,3 +120,48 @@ export function getLatestListings(count: number = 4): ListingWithDate[] {
 export function getAllListings(): ListingWithDate[] {
   return ALL_LISTINGS;
 }
+
+// --- Dashboard helpers ---
+
+// Simple purchase type for the dashboard
+export type Purchase = {
+  id: string;
+  listingId: string;
+  listingTitle: string;
+  price: number;
+  buyerEmail: string;
+  sellerName: string;
+  date: string; // ISO string
+};
+
+// Fake purchases for now (replace with real DB later)
+export const ALL_PURCHASES: Purchase[] = [
+  {
+    id: "p1",
+    listingId: "2",
+    listingTitle: "Dell XPS 13 (2019)",
+    price: 350,
+    buyerEmail: "your-email@hunter.cuny.edu", // <- change to your Supabase email to test
+    sellerName: "Maria Rodriguez",
+    date: "2025-10-01T15:30:00.000Z",
+  },
+  {
+    id: "p2",
+    listingId: "4",
+    listingTitle: "Graphing Calculator TI-84",
+    price: 40,
+    buyerEmail: "your-email@hunter.cuny.edu", // <- same here for testing
+    sellerName: "Sam Wilson",
+    date: "2025-10-02T12:00:00.000Z",
+  },
+];
+
+// Listings created by a specific seller (by email)
+export function getListingsForSeller(email: string): ListingWithDate[] {
+  return ALL_LISTINGS.filter((listing) => listing.sellerEmail === email);
+}
+
+// Purchases made by a specific buyer (by email)
+export function getPurchasesForBuyer(email: string): Purchase[] {
+  return ALL_PURCHASES.filter((purchase) => purchase.buyerEmail === email);
+}

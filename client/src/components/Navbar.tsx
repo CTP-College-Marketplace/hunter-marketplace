@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-// Added new imports to access supabase client and types and SignOutButton component
 import { supabase } from "@/lib/supabaseClient";
 import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 import SignOutButton from "@/components/SignOutButton";
@@ -11,7 +10,7 @@ import SignOutButton from "@/components/SignOutButton";
 const links = [
   { href: "/", label: "Home" },
   { href: "/browse", label: "Browse" },
-  { href: "/post", label: "Post" },
+  { href: "/dashboard", label: "Dashboard" },
 ];
 
 export default function Navbar() {
@@ -147,4 +146,3 @@ export default function Navbar() {
     </header>
   );
 }
-// If user is loggin, then it shows SignOutButton and if not logged in, it shows Log In link.
