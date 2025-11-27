@@ -33,6 +33,7 @@ export default function PostPage() {
     contactMethod: "email",
     imageUrl: "",
   });
+  const [file, setFile] = useState<File | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -136,6 +137,7 @@ export default function PostPage() {
     try {
       const payload = {
         ...form,
+        imageUrl,
         price: Number(form.price),
         sellerEmail: userEmail,
         datePosted: new Date().toISOString(),
