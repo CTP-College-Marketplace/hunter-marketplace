@@ -1,268 +1,401 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
-import Link from "next/link";
+import { useEffect, useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { isLoggedIn } from "@/lib/demoAuth";
+import { supabase } from "@/lib/supabaseClient";
 
+type Condition = "new" | "like new" | "good" | "fair";
 
-type NewListing = {
+type FormState = {
   title: string;
-  price: number | "";
+  price: string;
   category: string;
-  imageUrl: string;
   location: string;
-  condition: "new" | "like new" | "good" | "fair" | "";
+  condition: Condition | "";
   description: string;
+  contactMethod: string;
+  imageUrl: string;
 };
-
-const CATEGORIES = ["Textbooks", "Electronics", "Furniture", "Services"] as const;
-const CONDITIONS = ["new", "like new", "good", "fair"] as const;
 
 export default function PostPage() {
   const router = useRouter();
 
-  // TODO: replace with real auth check later
-  const [logged, setLogged] = useState(false);
-  useEffect(() => {
-    setLogged(isLoggedIn());
-  }, []);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
 
-
-  const [form, setForm] = useState<NewListing>({
+  const [form, setForm] = useState<FormState>({
     title: "",
     price: "",
     category: "",
-    imageUrl: "",
     location: "",
     condition: "",
     description: "",
+    contactMethod: "email",
+    imageUrl: "",
   });
   const [file, setFile] = useState<File | null>(null);
 
   const [submitting, setSubmitting] = useState(false);
-  const [submittedId, setSubmittedId] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
-  // quick validation
-  const errors = useMemo(() => {
-    const e: Partial<Record<keyof NewListing, string>> = {};
-    if (!form.title.trim()) e.title = "Title is required";
-    if (form.price === "" || Number(form.price) <= 0) e.price = "Enter a valid price";
-    if (!form.category) e.category = "Pick a category";
-    // Allow either a chosen file OR a direct image URL
-    if (!file && !form.imageUrl.trim()) e.imageUrl = "Image is required";
-    if (!form.location.trim()) e.location = "Where to meet or pick up?";
-    if (!form.condition) e.condition = "Select condition";
-    if (form.description.trim().length < 10) e.description = "Tell buyers a bit more (10+ chars)";
-    return e;
-  }, [form, file]);
+  // 🔒 Only logged-in users can access /post
+  useEffect(() => {
+    (async () => {
+      const { data, error } = await supabase.auth.getSession();
 
-  const hasErrors = Object.keys(errors).length > 0;
-
-  const handleChange =
-    <K extends keyof NewListing>(key: K) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-      const value = key === "price" ? (e.target.value === "" ? "" : Number(e.target.value)) : e.target.value;
-      setForm((f) => ({ ...f, [key]: value as NewListing[K] }));
-    };
-
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (hasErrors) return;
-
-    try {
-      setSubmitting(true);
-
-      // If a file was chosen, upload to Azure and get a public URL
-      let imageUrl = form.imageUrl.trim();
-      if (file) {
-        const fd = new FormData();
-        fd.append("file", file);
-        const res = await fetch("/api/upload", { method: "POST", body: fd });
-        if (!res.ok) throw new Error("Image upload failed");
-        const data = await res.json();
-        imageUrl = data.url as string;
+      if (error) {
+        console.error("Supabase auth error:", error.message);
+        setCheckingAuth(false);
+        setError("There was a problem checking your login status.");
+        return;
       }
 
+      const session = data.session;
+
+      if (!session || !session.user?.email) {
+        router.replace("/login?callback=/dashboard");
+        return;
+      }
+
+      setUserEmail(session.user.email);
+      setCheckingAuth(false);
+    })();
+  }, [router]);
+
+  const handleChange = (field: keyof FormState, value: string) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  // Upload image to /api/upload (Azure)
+  const handleImageChange = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setError(null);
+    setSuccess(null);
+    setUploadingImage(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error || "Upload failed");
+      }
+
+      const data = await res.json();
+      const url = data.url as string | undefined;
+
+      if (!url) throw new Error("No URL returned from upload");
+
+      setForm((prev) => ({ ...prev, imageUrl: url }));
+      setSuccess("Image uploaded successfully.");
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Image upload failed.";
+      console.error("Upload error:", err);
+      setError(message);
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSuccess(null);
+
+    if (!form.title.trim()) {
+      setError("Please enter a title for your listing.");
+      return;
+    }
+    if (!form.price || isNaN(Number(form.price))) {
+      setError("Please enter a valid price.");
+      return;
+    }
+    if (!form.category) {
+      setError("Please choose a category.");
+      return;
+    }
+    if (!form.condition) {
+      setError("Please select a condition.");
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
       const payload = {
         ...form,
         imageUrl,
         price: Number(form.price),
+        sellerEmail: userEmail,
         datePosted: new Date().toISOString(),
-        id: crypto.randomUUID(),
       };
-      console.log("Submitting listing:", payload);
 
-      // fake network delay
-      await new Promise((r) => setTimeout(r, 600));
+      // TODO: replace with real DB / API call
+      console.log("New listing payload (demo):", payload);
 
-      setSubmittedId(payload.id);
-      // reset the form
-      setForm({
-        title: "",
-        price: "",
-        category: "",
-        imageUrl: "",
-        location: "",
-        condition: "",
-        description: "",
-      });
-      setFile(null);
+      setSuccess(
+        "Your listing has been created (demo). Later this will save to the database."
+      );
 
-      // navigate to Browse after a moment (optional)
-      setTimeout(() => router.push("/browse"), 800);
+      setTimeout(() => {
+        router.push("/dashboard");
+      }, 1200);
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Could not create listing.";
+      console.error("Submit error:", err);
+      setError(message);
     } finally {
       setSubmitting(false);
     }
+  };
+
+  if (checkingAuth) {
+    return (
+      <div className="text-center text-gray-300">
+        Checking your login status…
+      </div>
+    );
   }
 
-  if (!logged) {
   return (
-    <div className="mx-auto max-w-2xl rounded-2xl border border-white/10 bg-white/10 p-6 text-white">
-      <h1 className="text-xl font-display font-bold">Post a Listing</h1>
-      <p className="mt-2 text-sm text-gray-300">
-        You need to be signed in to post.{" "}
-        <Link
-          href="/login?callback=/post"
-          className="text-hunter-purple underline underline-offset-4"
-        >
-          Log in
-        </Link>{" "}
-        to continue.
-      </p>
-    </div>
-  );
-}
+    <div className="mx-auto max-w-3xl space-y-6">
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-display font-bold">
+            Create a new listing
+          </h1>
+          <p className="text-sm text-gray-400">
+            Share what you&apos;re selling with other Hunter students.
+          </p>
+        </div>
+      </div>
 
-  return (
-    <div className="mx-auto max-w-2xl">
-      <h1 className="mb-2 text-2xl font-display font-bold text-white">Post a Listing</h1>
-      <p className="mb-6 text-sm text-gray-400">
-        Fill in the details below. Listings are visible to Hunter students.
-      </p>
+      {error && (
+        <div className="rounded-xl border border-red-500/60 bg-red-500/10 px-4 py-3 text-sm text-red-100">
+          {error}
+        </div>
+      )}
 
-      {submittedId && (
-        <div className="mb-6 rounded-xl border border-hunter-purple/30 bg-hunter-purple/15 px-4 py-3 text-sm text-white">
-          ✅ Listing submitted! Redirecting to Browse…
+      {success && (
+        <div className="rounded-xl border border-emerald-500/60 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
+          {success}
         </div>
       )}
 
       <form
-        onSubmit={onSubmit}
-        className="space-y-4 rounded-2xl border border-white/10 bg-white/10 p-6"
+        onSubmit={handleSubmit}
+        className="space-y-6 rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur"
       >
-        {/* Title */}
-        <div>
-          <label className="block text-sm font-medium text-gray-200">Title</label>
-          <input
-            value={form.title}
-            onChange={handleChange("title")}
-            placeholder="e.g., CSCI 135 Textbook (Good Condition)"
-            className="mt-1 w-full rounded-xl border border-white/10 bg-white/80 px-3 py-2 text-sm text-hunter-navy placeholder:text-gray-500 outline-none focus:ring-2 focus:ring-hunter-purple/50"
-          />
-          {errors.title && <p className="mt-1 text-xs text-red-300">{errors.title}</p>}
-        </div>
-
-        {/* Row: Price + Category */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {/* Title & Price */}
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div className="sm:col-span-2">
+            <label className="block text-sm font-medium mb-1">
+              Title
+            </label>
+            <input
+              type="text"
+              className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-sm outline-none focus:border-hunter-purple/70"
+              placeholder="e.g. Graphing Calculator TI-84"
+              value={form.title}
+              onChange={(e) => handleChange("title", e.target.value)}
+            />
+          </div>
           <div>
-            <label className="block text-sm font-medium text-gray-200">Price ($)</label>
+            <label className="block text-sm font-medium mb-1">
+              Price ($)
+            </label>
             <input
               type="number"
               min={0}
-              step="1"
+              className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-sm outline-none focus:border-hunter-purple/70"
+              placeholder="40"
               value={form.price}
-              onChange={handleChange("price")}
-              placeholder="25"
-              className="mt-1 w-full rounded-xl border border-white/10 bg-white/80 px-3 py-2 text-sm text-hunter-navy placeholder:text-gray-500 outline-none focus:ring-2 focus:ring-hunter-purple/50"
+              onChange={(e) => handleChange("price", e.target.value)}
             />
-            {errors.price && <p className="mt-1 text-xs text-red-300">{errors.price}</p>}
           </div>
+        </div>
 
+        {/* Category, Condition, Location */}
+        <div className="grid gap-4 sm:grid-cols-3">
           <div>
-            <label className="block text-sm font-medium text-gray-200">Category</label>
+            <label className="block text-sm font-medium mb-1">
+              Category
+            </label>
             <select
+              className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-sm outline-none focus:border-hunter-purple/70"
               value={form.category}
-              onChange={handleChange("category")}
-              className="mt-1 w-full rounded-xl border border-white/10 bg-white/80 px-3 py-2 text-sm text-hunter-navy outline-none focus:ring-2 focus:ring-hunter-purple/50"
+              onChange={(e) => handleChange("category", e.target.value)}
             >
-              <option value="">Select a category…</option>
-              {CATEGORIES.map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
+              <option value="">Select a category</option>
+              <option value="Textbooks">Textbooks</option>
+              <option value="Electronics">Electronics</option>
+              <option value="Furniture">Furniture</option>
+              <option value="Services">Services</option>
+              <option value="Other">Other</option>
             </select>
-            {errors.category && <p className="mt-1 text-xs text-red-300">{errors.category}</p>}
-          </div>
-        </div>
-
-        {/* Row: Image Upload + Location */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label className="block text-sm font-medium text-gray-200">Listing Image</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-              className="mt-1 w-full rounded-xl border border-white/10 bg-white/80 px-3 py-2 text-sm text-hunter-navy placeholder:text-gray-500 outline-none focus:ring-2 focus:ring-hunter-purple/50"
-            />
-            {!file && errors.imageUrl && <p className="mt-1 text-xs text-red-300">{errors.imageUrl}</p>}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-200">Location</label>
+            <label className="block text-sm font-medium mb-1">
+              Condition
+            </label>
+            <select
+              className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-sm outline-none focus:border-hunter-purple/70"
+              value={form.condition}
+              onChange={(e) =>
+                handleChange("condition", e.target.value as Condition)
+              }
+            >
+              <option value="">Select condition</option>
+              <option value="new">New</option>
+              <option value="like new">Like new</option>
+              <option value="good">Good</option>
+              <option value="fair">Fair</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Location
+            </label>
             <input
+              type="text"
+              className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-sm outline-none focus:border-hunter-purple/70"
+              placeholder="e.g. Library, Dorms"
               value={form.location}
-              onChange={handleChange("location")}
-              placeholder="e.g., Hunter West, Library, Dorms"
-              className="mt-1 w-full rounded-xl border border-white/10 bg-white/80 px-3 py-2 text-sm text-hunter-navy placeholder:text-gray-500 outline-none focus:ring-2 focus:ring-hunter-purple/50"
+              onChange={(e) => handleChange("location", e.target.value)}
             />
-            {errors.location && <p className="mt-1 text-xs text-red-300">{errors.location}</p>}
           </div>
-        </div>
-
-        {/* Row: Condition */}
-        <div>
-          <label className="block text-sm font-medium text-gray-200">Condition</label>
-          <select
-            value={form.condition}
-            onChange={handleChange("condition")}
-            className="mt-1 w-full rounded-xl border border-white/10 bg-white/80 px-3 py-2 text-sm text-hunter-navy outline-none focus:ring-2 focus:ring-hunter-purple/50"
-          >
-            <option value="">Select condition…</option>
-            {CONDITIONS.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
-          {errors.condition && <p className="mt-1 text-xs text-red-300">{errors.condition}</p>}
         </div>
 
         {/* Description */}
         <div>
-          <label className="block text-sm font-medium text-gray-200">Description</label>
+          <label className="block text-sm font-medium mb-1">
+            Description
+          </label>
           <textarea
+            rows={4}
+            className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-sm outline-none focus:border-hunter-purple/70"
+            placeholder="Add details about the item, its condition, and anything a buyer should know."
             value={form.description}
-            onChange={handleChange("description")}
-            rows={5}
-            placeholder="Add details like condition, included accessories, when/where to meet, etc."
-            className="mt-1 w-full resize-y rounded-xl border border-white/10 bg-white/80 px-3 py-2 text-sm text-hunter-navy placeholder:text-gray-500 outline-none focus:ring-2 focus:ring-hunter-purple/50"
+            onChange={(e) => handleChange("description", e.target.value)}
           />
-          {errors.description && <p className="mt-1 text-xs text-red-300">{errors.description}</p>}
+        </div>
+
+        {/* Contact method */}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Preferred contact method
+            </label>
+            <select
+              className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-sm outline-none focus:border-hunter-purple/70"
+              value={form.contactMethod}
+              onChange={(e) =>
+                handleChange("contactMethod", e.target.value)
+              }
+            >
+              <option value="email">Email</option>
+              <option value="message">In-app message (future)</option>
+            </select>
+          </div>
+          {userEmail && (
+            <div className="text-xs text-gray-400 self-end">
+              Buyers will contact you at:{" "}
+              <span className="font-medium text-gray-200">
+                {userEmail}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Image upload – with big + card */}
+        <div className="space-y-2">
+          <label className="block text-sm font-medium mb-1">
+            Listing image (optional)
+          </label>
+
+          {/* hidden native input */}
+          <input
+            id="fileInput"
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+            className="hidden"
+          />
+
+          {/* when no image yet */}
+          {!form.imageUrl && (
+            <label
+              htmlFor="fileInput"
+              className="
+                flex flex-col items-center justify-center
+                w-full h-40 rounded-2xl cursor-pointer
+                border border-dashed border-white/20 
+                bg-white/5 hover:bg-white/10
+                transition
+              "
+            >
+              <div className="text-4xl text-gray-300 mb-1">+</div>
+              <div className="text-xs text-gray-400">
+                Click to upload an image
+              </div>
+            </label>
+          )}
+
+          {/* when image selected */}
+          {form.imageUrl && (
+            <div className="space-y-2">
+              <img
+                src={form.imageUrl}
+                alt="Listing preview"
+                className="h-40 w-full object-cover rounded-2xl border border-white/10"
+              />
+              <label
+                htmlFor="fileInput"
+                className="inline-block text-xs text-hunter-purple cursor-pointer hover:underline"
+              >
+                Replace image
+              </label>
+            </div>
+          )}
+
+          {uploadingImage && (
+            <p className="text-xs text-gray-400 mt-1">
+              Uploading image…
+            </p>
+          )}
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-end gap-3">
-          <Link
-            href="/listings"
-            className="rounded-full border border-white/20 px-4 py-2 text-sm text-white hover:bg-white/10 transition"
+        <div className="flex items-center justify-end gap-3 pt-2">
+          <button
+            type="button"
+            className="rounded-full border border-white/20 px-4 py-2 text-sm hover:bg-white/10"
+            onClick={() => router.push("/dashboard")}
           >
             Cancel
-          </Link>
+          </button>
           <button
             type="submit"
-            disabled={submitting || hasErrors}
-            className="rounded-full bg-hunter-purple px-5 py-2 text-sm font-semibold text-white shadow-soft transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={submitting || uploadingImage}
+            className="rounded-full bg-hunter-purple px-5 py-2 text-sm font-semibold text-white shadow-soft hover:opacity-90 disabled:opacity-60"
           >
-            {submitting ? "Posting…" : "Post Listing"}
+            {submitting ? "Creating…" : "Create listing"}
           </button>
         </div>
       </form>
